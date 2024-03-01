@@ -30,3 +30,5 @@ export const varifyJWT = asyncHandler(async(req,res,next) => {
         throw new ApiError(401, error?.message || "Invalid access token")
     }
 })
+
+export {varifyJWT}
