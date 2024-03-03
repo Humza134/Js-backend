@@ -55,9 +55,11 @@ const registerUser = asyncHandler ( async (req,res) => {
         if (existedUser) {
             throw new ApiError(409, "User with email or username already exist")
         }
+        // console.log("reqFile:", req.files)
 
         const avatarLocalPath = req.files?.avatar[0]?.path
         // const coverImageLocalPath = req.files?.coverImage[0]?.path
+        // console.log("avatarLocalPath:", avatarLocalPath)
         
         let coverImageLocalPath;
         if(req.files && Array.isArray(req.files.coverImage)
@@ -92,6 +94,7 @@ const registerUser = asyncHandler ( async (req,res) => {
         if(!createdUser) {
             throw new ApiError(500, "Something went wrong while regestring a user")
         }
+        // console.log("createdUser:", createdUser)
 
         return res.status(201).json(
             new ApiResponse(200, createdUser, "User registered successfully")
@@ -107,7 +110,7 @@ const loginUser = asyncHandler(async (req,res) => {
     // cookie send
     // response return
 
-    const {username, email, password} = req.body
+    const {email, username, password} = req.body
     // console.log(email)
 
     if (!username && !email) {
@@ -126,6 +129,7 @@ const loginUser = asyncHandler(async (req,res) => {
     if (!user) {
         throw new ApiError(404, "user does not exist")
     }
+    console.log("user:", user)
 
     const isPasswordValid = await user.isPasswordCorrect(password)
 
@@ -134,6 +138,8 @@ const loginUser = asyncHandler(async (req,res) => {
     } 
     
     const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
+    console.log("accessToken:", accessToken)
+    console.log("refreshToken:", refreshToken)
 
     const loggedInUser = await User.findById(user._id).
     select("-password -refreshToken")
@@ -158,7 +164,7 @@ const loginUser = asyncHandler(async (req,res) => {
     )
 })
 
-const logoutUser = asyncHandler (async(req,rres) => {
+const logoutUser = asyncHandler (async(req,res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -178,8 +184,8 @@ const logoutUser = asyncHandler (async(req,rres) => {
 
     return res
     .status(200)
-    .clearCookie(accessToken, options)
-    .clearCookie(refreshToken, options)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged Out successfully"))
 })
 
