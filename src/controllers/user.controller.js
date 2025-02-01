@@ -129,7 +129,7 @@ const loginUser = asyncHandler(async (req,res) => {
     if (!user) {
         throw new ApiError(404, "user does not exist")
     }
-    console.log("user:", user)
+    // console.log("user:", user)
 
     const isPasswordValid = await user.isPasswordCorrect(password)
 
@@ -138,8 +138,8 @@ const loginUser = asyncHandler(async (req,res) => {
     } 
     
     const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
-    console.log("accessToken:", accessToken)
-    console.log("refreshToken:", refreshToken)
+    // console.log("accessToken:", accessToken)
+    // console.log("refreshToken:", refreshToken)
 
     const loggedInUser = await User.findById(user._id).
     select("-password -refreshToken")
@@ -195,6 +195,7 @@ const refreshAccessToken = asyncHandler (async (req,res) => {
     if(!incomingRefreshToken) {
         throw new ApiError(401, "unauthorized request")
     }
+    console.log("incomingRefreshToken:", incomingRefreshToken)
 
     try {
         const decodedToken = Jwt.verify(
@@ -207,18 +208,20 @@ const refreshAccessToken = asyncHandler (async (req,res) => {
         if(!user) {
             throw new ApiError(401, "Invalid refresh token") 
         }
+        console.log("user:", user)
     
         if(incomingRefreshToken !== user?.refreshToken) {
             throw new ApiError(401, "Refresh Token is expired or used")
         }
     
         const options = {
-            httpOnly: ture,
+            httpOnly: true,
             secure: true
         }
     
        const {accessToken,newRefreshToken} = await generateAccessAndRefreshToken(user._id)
-    
+        console.log("accessToken:", accessToken)
+        console.log("newRefreshToken:", newRefreshToken)
         return res
         .status(200)
         .cookie("accessToken", accessToken, options)
@@ -237,6 +240,9 @@ const refreshAccessToken = asyncHandler (async (req,res) => {
 
 const changeCurrentPassword = asyncHandler(async (req,res) => {
     const {oldPassword, newPassword} = req.body
+
+    console.log("oldPassword:", oldPassword)
+    console.log("newPassword:", newPassword)
 
     const user = await User.findById(req.user?._id)
     

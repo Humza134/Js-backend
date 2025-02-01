@@ -25,4 +25,33 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-export {uploadOnCloudinary}
+const DeleteFromCloudinary = async (mediaURI) => {
+    try {
+      if (!mediaURI) {
+        throw new Error("Media URI is missing");
+      }
+  
+      const parsedUrl = new URL(mediaURI);
+      const publicIdURI = parsedUrl.pathname.replace(/^\/|\/$/g, "");
+      const splPublicIdURI = publicIdURI.split("/");
+      const fileExt = splPublicIdURI[1];
+      const publicIdExt = splPublicIdURI[splPublicIdURI.length - 1];
+      const splPublicIdExt = publicIdExt.split(".");
+      const publicId = splPublicIdExt[0];
+      if (fileExt === "video") {
+        const response = await cloudinary.uploader.destroy(publicId, {
+          resource_type: "video",
+          invalidate: true,
+        });
+        return response;
+      }
+  
+      const response = await cloudinary.uploader.destroy(publicId);
+      return response;
+    } catch (error) {
+      console.error("Error deleting from Cloudinary:", error.message);
+      throw error;
+    }
+  };
+
+export {uploadOnCloudinary, DeleteFromCloudinary}

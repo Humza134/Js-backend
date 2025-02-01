@@ -4,7 +4,7 @@ import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {uploadOnCloudinary, DeleteFromCloudinary} from "../utils/cloudinary.js"
 
 
 
@@ -71,26 +71,156 @@ const getVideoById = asyncHandler(async (req, res) => {
     )
 })
 
-const updateVideo = asyncHandler(async (req, res) => {
+const updateVideoDetails = asyncHandler(async (req, res) => {
+    const { title, description } = req.body
     const { videoId } = req.params
-    //TODO: update video details like title, description, thumbnail
+
+    if (!videoId) {
+        throw new ApiError(400, "Video Id is required")
+    }
+
+    const video = await Video.findById(videoId)
+    if (!video) {
+        throw new ApiError(404, "Video is not found")
+    }
+
+    if(!title?.trim() && !description?.trim()) {
+        throw new ApiError (400, "Title and descriptoin is required")
+    }
+
+    console.log("UserId: ", req.user._id, "VideoOwner: ", video.owner)
+
+    if (!video.owner.toString() === req.user._id.toString()) {
+        throw new ApiError(401, "Only owner can update the video")
+    }
+
+    const updateVideo = await Video.findByIdAndUpdate(videoId, {
+        $set: {
+          title,
+          description
+        }
+      },
+        {
+          new: true
+        })
+
+    if (!updateVideo) {
+        throw new ApiError(500, "Failed to update video details")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updateVideo, "Video Updated successfully")
+    )
+    
+
+})
+
+const updateVideoThumbnail = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+   
+    if (!videoId) {
+        throw new ApiError(400, "Video is required")
+    }
+
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(404, "Video not found")
+    }
+
+
+    if(!video.owner.toString() === req.user._id.toString()) {
+        throw new ApiError (401, "Only owner can update video")
+    }
+
+    // console.log("REQFILE: ", req.files)
+    // const thumbnailLocalPath = req.files?.path
+
+    let thumbnailLocalPath
+    if(req.files && req.files.path) {
+        thumbnailLocalPath = req.files?.path
+    }
+
+
+    if (!thumbnailLocalPath) {
+        throw new ApiError(400, "Thumbnail is required")
+    }
+
+    // const tempUri = video.thumbnail
+
+    const thumbnailUrl = await uploadOnCloudinary(thumbnailLocalPath)
+    if (!thumbnailUrl) {
+        throw new ApiError(400, "Error while uploading thumbnail in cloudinary")
+    }
+
+    // await DeleteFromCloudinary(tempUri)
+
+    const updateThumbnail = await Video.findByIdAndUpdate(videoId, {
+        $set: {
+            thumbnail: thumbnailUrl.url
+            }
+        },
+        {
+        new: true
+        }
+    )
+
+    if (!updateThumbnail) {
+        throw new ApiError(500, "Failed to update thumbanil")
+    }
+
+    return res.status(201).json(
+        new ApiResponse(200, "Thumbnail updated successfully")
+    )
 
 })
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    //TODO: delete video
+    
+    
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+
+    if (!videoId) {
+        throw new ApiError(400, "Video id is required")
+    }
+
+    const video = await Video.findById(videoId)
+    if (!video) {
+        throw new ApiError(404, "video not found")
+    }
+
+    const {isPublishedStatus} = req.body
+
+    if (!video.owner.toString() === req.user._id.toString()) {
+        throw new ApiError(401, "only owner can update the video")
+    }
+
+    const updateStatus = await Video.findByIdAndUpdate(
+        videoId,
+        {isPublished: isPublishedStatus},
+        {new: true}
+    )
+
+    if (!updateStatus) {
+        throw new ApiError(401, "Failed to update status")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updateStatus, "status updated successfully") 
+    )
+
 })
 
 export {
     getAllVideos,
     publishAVideo,
     getVideoById,
-    updateVideo,
+    updateVideoDetails,
     deleteVideo,
-    togglePublishStatus
+    togglePublishStatus,
+    updateVideoThumbnail
 }

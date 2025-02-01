@@ -9,7 +9,7 @@ export const varifyJWT = asyncHandler(async(req,res,next) => {
         const token = req.cookies?.accessToken || req.header
         ("Authorization")?.replace("Bearer ", "")
 
-        console.log("accessToken:", token)
+        // console.log("accessToken:", token)
     
         if(!token) {
             throw new ApiError(401, "Unauthorized request")
@@ -24,7 +24,7 @@ export const varifyJWT = asyncHandler(async(req,res,next) => {
         if(!user) {
             throw new ApiError(401, "Invalid Access Token")
         }
-        console.log("user:", user)
+        // console.log("user:", user)
     
         req.user = user
         next()
